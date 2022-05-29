@@ -129,10 +129,13 @@ void ThreadPool::deleteThreadById(int threadId)
 				if ((*itt)->joinable()) {
 					(*itt)->join();
 				}
+				cout << "=============================================\n";
 				cout << "The thread: " << m_threads[threadId]->get_id() << " was deleted!\n";
+				cout << "=============================================\n";
 				delete* itt;
 				itt = m_threads.erase(itt);
 				lockedFlag = false;
+				deleteThreadId = -1;
 			} else {
 				itt++;
 			}
@@ -144,9 +147,13 @@ void ThreadPool::setDeleteFlag(bool flag)
 {
 	if (!lockedFlag) {
 		deleteFlag = flag;
+		cout << "======================\n";
 		cout << "Deleting the thread...\n";
+		cout << "======================\n";
 	} else {
+		cout << "=============================================\n";
 		cout << "Please wait until the thread will be deleted!\n";
+		cout << "=============================================\n";
 	}
 }
 
