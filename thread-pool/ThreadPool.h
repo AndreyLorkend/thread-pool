@@ -22,27 +22,47 @@ private:
   condition_variable m_conditional_lock;
   int threadsCount;
   bool deleteFlag;
+  bool lockedFlag;
   int deleteThreadId;
+  int tasksCount;
 public:
 	ThreadPool(const int n_threads);
 	~ThreadPool();
 	// Inits thread pool
 	void init();
-	// Add thread
+
 	void addThread();
-	// Remove thread
+
 	void removeThread();
-	// Waits until threads finish their current task and shutdowns the pool
+
 	void shutdown();
+
+	void deleteThreadById(int threadId);
+
 	// getters
 	bool getShutdownFlag();
+
 	mutex& getConditionalMutex();
+
 	SafeQueue<function<void()>>& getQueue();
+
 	condition_variable& getConditionalLock();
+
+	bool getDeleteFlag();
+
 	int getThreadsCount();
+
 	int getCurrentThreadCount();
-	void deleteThreadById(int threadId);
+
+	int getCurrentDeleteThreadId();
+
+	int getTasksCount();
+
+	int getCurrentTasksCount();
+	
+	// setters
 	void setDeleteFlag(bool flag);
+
 	void setDeleteThreadId(int id);
 
     // Submit a function to be executed asynchronously by the pool

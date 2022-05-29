@@ -22,7 +22,7 @@ DWORD fdwSaveOldMode;
 DWORD fdwMode;
 INPUT_RECORD irInBuf[INPUT_RECORD_BUFFER];
 
-ThreadPool fillThreads(1);
+ThreadPool fillThreads(3);
 ThreadPool keyboardThread(1);
 
 enum keyButtons {
@@ -49,9 +49,8 @@ int main()
 
 	setConsoleParams();
 	keyboardThread.submit(handleConsole);
-	
 
-	for (int i = 0; i < 4096; i++) {
+	for (int i = 0; i < 1023; i++) {
 		num = rand() % 64 + 1;
 		if (currentFillIndex < BUFFER_SIZE) {
 			fillThreads.submit(fillBuffer, num, currentFillIndex, buffer);
@@ -61,8 +60,8 @@ int main()
 		}
 	}
 
-	keyboardThread.shutdown();
 	fillThreads.shutdown();
+	keyboardThread.shutdown();
 	return 0;
 }
 
@@ -110,10 +109,20 @@ void KeyEventProc(KEY_EVENT_RECORD ker)
 			fillThreads.addThread();
 			break;
 		case ARROW_DOWN:
-			fillThreads.removeThread();
+			//fillThreads.removeThread();
+			fillThreads.setDeleteFlag(true);
 			break;
-		case KEY_I:
+		case KEY_I: {
+			cout << "=======================\n";
 			cout << "Threads are working: " << fillThreads.getThreadsCount() << "\n";
+			cout << "Current threads count: " << fillThreads.getCurrentThreadCount() << "\n";
+			//cout << "All tasks count: " << fillThreads.getTasksCount() << "\n";
+			//cout << "Tasks completed: " << fillThreads.getCurrentTasksCount() << "\n";
+			if (fillThreads.getCurrentDeleteThreadId() >= 0) {
+				cout << "Current delete thread id: " << fillThreads.getCurrentDeleteThreadId() << "\n";
+			}
+			cout << "=======================\n";
+		}
 			break;
 		case ESC:
 			isExitFlagSet = true;

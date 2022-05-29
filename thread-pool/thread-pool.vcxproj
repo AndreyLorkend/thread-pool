@@ -125,7 +125,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="SafeQueue.cpp" />
     <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="ThreadWorker.cpp" />
   </ItemGroup>

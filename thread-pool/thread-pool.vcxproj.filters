@@ -21,9 +21,6 @@
     <ClCompile Include="ThreadPool.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="SafeQueue.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="ThreadWorker.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>

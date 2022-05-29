@@ -1,10 +1,14 @@
 #include "ThreadPool.h"
 #include "ThreadWorker.h"
+#include <iostream>
 
 ThreadPool::ThreadPool(const int n_threads)	: m_shutdown(false) 
 {
 	threadsCount = n_threads;
+	deleteThreadId = -1;
 	deleteFlag = false;
+	lockedFlag = false;
+	tasksCount = m_queue.size();
 }
 
 ThreadPool::~ThreadPool()
@@ -26,13 +30,18 @@ void ThreadPool::init() {
 
 void ThreadPool::addThread()
 {
-	m_threads.push_back(new thread(ThreadWorker(this, m_threads.size())));
-	threadsCount++;
+	if (m_queue.size()) {
+		m_threads.push_back(new thread(ThreadWorker(this, m_threads.size())));
+		threadsCount++;
+	}
 }
 
 void ThreadPool::removeThread()
 {
-	threadsCount--;
+	if (threadsCount > 0 && !lockedFlag) {
+		lockedFlag = true;
+		threadsCount--;
+	}
 }
 
 void ThreadPool::shutdown() {
@@ -41,11 +50,17 @@ void ThreadPool::shutdown() {
 	while (m_queue.size()) {
 		{
 			unique_lock<mutex> lock(m_conditional_mutex);
-			dequeued = m_queue.dequeue(func);
+			if (m_threads.size()) {
+				dequeued = m_queue.dequeue(func);
+			}
 		}
 
-		if (dequeued) {
+		if (dequeued && m_threads.size()) {
 			func();
+		}
+
+		if (lockedFlag && m_threads.size()) {
+			deleteThreadById(deleteThreadId);
 		}
 	}
 
@@ -55,6 +70,7 @@ void ThreadPool::shutdown() {
 	for (int i = 0; i < m_threads.size(); ++i) {
 		if (m_threads[i]->joinable()) {
 			m_threads[i]->join();
+			deleteThreadById(i);
 		}
 	}
 }
@@ -89,17 +105,35 @@ int ThreadPool::getCurrentThreadCount()
 	return threadsCount;
 }
 
+int ThreadPool::getCurrentDeleteThreadId()
+{
+	return deleteThreadId;
+}
+
+int ThreadPool::getTasksCount()
+{
+	return tasksCount;
+}
+
+int ThreadPool::getCurrentTasksCount()
+{
+	return m_queue.size();
+}
+
 void ThreadPool::deleteThreadById(int threadId)
 {
 	std::vector<thread*>::iterator itt;
-	if (m_threads[threadId]->joinable()) {
-		m_threads[threadId]->join();
+	if (threadsCount >= 0 && !m_threads.empty()) {
 		for (itt = m_threads.begin(); itt != m_threads.end();) {
 			if ((*itt)->get_id() == m_threads[threadId]->get_id()) {
-				swap(*itt, m_threads.back());
-				m_threads.pop_back();
-			}
-			else {
+				if ((*itt)->joinable()) {
+					(*itt)->join();
+				}
+				cout << "The thread: " << m_threads[threadId]->get_id() << " was deleted!\n";
+				delete* itt;
+				itt = m_threads.erase(itt);
+				lockedFlag = false;
+			} else {
 				itt++;
 			}
 		}
@@ -108,7 +142,17 @@ void ThreadPool::deleteThreadById(int threadId)
 
 void ThreadPool::setDeleteFlag(bool flag)
 {
-	deleteFlag = flag;
+	if (!lockedFlag) {
+		deleteFlag = flag;
+		cout << "Deleting the thread...\n";
+	} else {
+		cout << "Please wait until the thread will be deleted!\n";
+	}
+}
+
+bool ThreadPool::getDeleteFlag()
+{
+	return deleteFlag;
 }
 
 void ThreadPool::setDeleteThreadId(int id)
