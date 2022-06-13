@@ -20,11 +20,14 @@ private:
   vector<thread*> m_threads;
   mutex m_conditional_mutex;
   condition_variable m_conditional_lock;
+
   int threadsCount;
   bool deleteFlag;
   bool lockedFlag;
   int deleteThreadId;
   int tasksCount;
+
+  bool lock;
 public:
 	ThreadPool(const int n_threads);
 	~ThreadPool();
@@ -59,11 +62,15 @@ public:
 	int getTasksCount();
 
 	int getCurrentTasksCount();
+
+	bool getLock();
 	
 	// setters
 	void setDeleteFlag(bool flag);
 
 	void setDeleteThreadId(int id);
+
+	void setLock(bool flag);
 
     // Submit a function to be executed asynchronously by the pool
 	template<typename F, typename...Args>

@@ -9,6 +9,7 @@ ThreadPool::ThreadPool(const int n_threads)	: m_shutdown(false)
 	deleteFlag = false;
 	lockedFlag = false;
 	tasksCount = m_queue.size();
+	lock = false;
 }
 
 ThreadPool::~ThreadPool()
@@ -47,22 +48,23 @@ void ThreadPool::removeThread()
 void ThreadPool::shutdown() {
 	bool dequeued;
 	function<void()> func;
-	while (m_queue.size()) {
-		{
-			unique_lock<mutex> lock(m_conditional_mutex);
-			if (m_threads.size()) {
-				dequeued = m_queue.dequeue(func);
-			}
-		}
+	while (m_queue.size());
+	//{
+	//	{
+	//		unique_lock<mutex> lock(m_conditional_mutex);
+	//		if (m_threads.size()) {
+	//			dequeued = m_queue.dequeue(func);
+	//		}
+	//	}
 
-		if (dequeued && m_threads.size()) {
-			func();
-		}
+	//	if (dequeued && m_threads.size()) {
+	//		func();
+	//	}
 
-		if (lockedFlag && m_threads.size()) {
-			deleteThreadById(deleteThreadId);
-		}
-	}
+	//	if (lockedFlag && m_threads.size()) {
+	//		deleteThreadById(deleteThreadId);
+	//	}
+	//}
 
 	m_shutdown = true;
 	m_conditional_lock.notify_all();
@@ -112,12 +114,17 @@ int ThreadPool::getCurrentDeleteThreadId()
 
 int ThreadPool::getTasksCount()
 {
-	return tasksCount;
+	return m_queue.size();
 }
 
 int ThreadPool::getCurrentTasksCount()
 {
 	return m_queue.size();
+}
+
+bool ThreadPool::getLock()
+{
+	return lock;
 }
 
 void ThreadPool::deleteThreadById(int threadId)
@@ -129,9 +136,9 @@ void ThreadPool::deleteThreadById(int threadId)
 				if ((*itt)->joinable()) {
 					(*itt)->join();
 				}
-				cout << "=============================================\n";
-				cout << "The thread: " << m_threads[threadId]->get_id() << " was deleted!\n";
-				cout << "=============================================\n";
+				cout << "=======================\n";
+				cout << "The thread was deleted!\n";
+				cout << "=======================\n";
 				delete* itt;
 				itt = m_threads.erase(itt);
 				lockedFlag = false;
@@ -145,15 +152,15 @@ void ThreadPool::deleteThreadById(int threadId)
 
 void ThreadPool::setDeleteFlag(bool flag)
 {
-	if (!lockedFlag) {
+	if (!lockedFlag && m_threads.size() > 1) {
 		deleteFlag = flag;
 		cout << "======================\n";
 		cout << "Deleting the thread...\n";
 		cout << "======================\n";
 	} else {
-		cout << "=============================================\n";
-		cout << "Please wait until the thread will be deleted!\n";
-		cout << "=============================================\n";
+		cout << "====================\n";
+		cout << "Can't delete thread!\n";
+		cout << "====================\n";
 	}
 }
 
@@ -165,4 +172,12 @@ bool ThreadPool::getDeleteFlag()
 void ThreadPool::setDeleteThreadId(int id)
 {
 	deleteThreadId = id;
+}
+
+void ThreadPool::setLock(bool flag)
+{
+	lock = flag;
+	if (!flag) {
+		m_conditional_lock.notify_all();
+	}
 }
